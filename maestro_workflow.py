@@ -1,0 +1,40 @@
+import argparse
+import os
+
+import file_separate
+
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument("-i", "--input", help="Input file with multiple ligands.")
+parser.add_argument("-d", "--docking", help="Input file from docking. Unzipped. *_pv.maegz")
+parser.add_argument("-c", "--crystal", help="Input file with crystals.")
+parser.add_argument("-o", "--output", help="Output filename.", default="maestro_script.txt")
+
+args = parser.parse_args()
+
+if __name__ == "__main__":
+    error_code, titles_file = file_separate.separate_ligands(args.input)
+    if error_code != 0:
+        parser.print_help()
+        exit(error_code)
+
+    files = os.listdir("./ligands")
+
+    SMARTS_path = "SMARTS.txt"
+
+    os.system(f"python ./gen_smarts.py -i {args.docking}, -o {SMARTS_path}")
+
+    SMARTS = open(SMARTS_path).readlines()[1:]
+    SMARTS = [i.rstrip() for i in SMARTS]
+
+    output = open(args.output, "w")
+    output.write(f'entryimport "{args.crystal}"\nentryimport "{args.input}"\nshowpanel superimpose\n\n')
+
+    for i in range(len(titles_file)):
+        output.write(f"entryincludeonly s_m_title *{'_'.join(titles_file[i].split('_')[:2])}*\n")
+        output.write(f"entryinclude s_m_title {'_'.join(titles_file[i].split('_')[:1])}\n")
+        output.write('propertysuperimposesetting  applytoentries=included\nsuperimpose  inplace=false\nsuperimposeset atom.ptype " CA "\nsuperimpose  inplace=true')
+        output.write(f'uperimposesmarts "{SMARTS[i]}"\n\n')
+
+    output.close()
