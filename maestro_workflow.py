@@ -23,18 +23,18 @@ if __name__ == "__main__":
 
     SMARTS_path = "SMARTS.txt"
 
-    os.system(f"python ./gen_smarts.py -i {args.docking}, -o {SMARTS_path}")
+    os.system("python ./gen_smarts.py -i %s, -o %s" % (args.docking, {SMARTS_path}))
 
     SMARTS = open(SMARTS_path).readlines()[1:]
     SMARTS = [i.rstrip() for i in SMARTS]
 
     output = open(args.output, "w")
-    output.write(f'entryimport "{args.crystal}"\nentryimport "{args.input}"\nshowpanel superimpose\n\n')
+    output.write('entryimport "%s"\nentryimport "%s"\nshowpanel superimpose\n\n' %(args.crystal, args.input))
 
     for i in range(len(titles_file)):
-        output.write(f"entryincludeonly s_m_title *{'_'.join(titles_file[i].split('_')[:2])}*\n")
-        output.write(f"entryinclude s_m_title {'_'.join(titles_file[i].split('_')[:1])}\n")
+        output.write("entryincludeonly s_m_title *%s*\n" % '_'.join(titles_file[i].split('_')[:2]))
+        output.write("entryinclude s_m_title %s\n" % '_'.join(titles_file[i].split('_')[:1]))
         output.write('propertysuperimposesetting  applytoentries=included\nsuperimpose  inplace=false\nsuperimposeset atom.ptype " CA "\nsuperimpose  inplace=true')
-        output.write(f'uperimposesmarts "{SMARTS[i]}"\n\n')
+        output.write('uperimposesmarts "%s"\n\n' % SMARTS[i])
 
     output.close()

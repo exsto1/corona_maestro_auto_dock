@@ -5,7 +5,7 @@ def separate_ligands(file_path):
         print("No input file!")
         return 1, None
     except FileNotFoundError:
-        print(f"No such file: {file_path}")
+        print("No such file: %s" % file_path)
         return 2, None
     parts = file.split(' } \n} \n')
 
@@ -21,7 +21,7 @@ def separate_ligands(file_path):
         title1 = title0.split(":")[-1]
         titles_file.append(title1)
 
-        out = open(f"ligands/{title1}.mae", 'w')
+        out = open("ligands/%s.mae" % title1, 'w')
         out.write(intro)
         out.write(parts[i])
         out.write(" } \n} \n")
