@@ -16,7 +16,12 @@ parser.add_argument("-o", "--output", help="Output filename.", default="maestro_
 args = parser.parse_args()
 
 if __name__ == "__main__":
-    error_code, titles_SMARTS = file_separate.separate_ligands(args.docking, "docking")
+    base=os.path.basename(args.docking)
+    unzipped=os.path.splitext(base)[0]+".mae"
+    os.system("sudo /opt/schrodingerfree/run structconvert.py -imae %s %s" %(args.docking,unzipped))
+
+
+    error_code, titles_SMARTS = file_separate.separate_ligands(unzipped, "docking")
     if error_code != 0:
         parser.print_help()
         exit(error_code)
@@ -25,7 +30,7 @@ if __name__ == "__main__":
 
     for i in range(1, len(titles_SMARTS)):
         try:
-            os.system("python ./gen_smarts.py -i ./docking/%s, -o ./DELETE" % (titles_SMARTS[i]))
+            os.system("python ./gen_smarts.py -i ./docking/%s.mae, -o ./DELETE" % (titles_SMARTS[i]))
             temp = open("./DELETE")
             temp1 = temp.read()
             SMARTS_save.append(temp1)
@@ -34,33 +39,33 @@ if __name__ == "__main__":
             print("ERROR: %s" %titles_SMARTS[i])
     os.remove("./DELETE")
 
-    print(len(SMARTS_save))
-    for i in SMARTS_save:
-        print(i)
+    os.system("sudo /opt/schrodingerfree/run pv_convert.py -mode merge %s" %(unzipped))
 
-# ####
-#
-# ####
-#
-#     SMARTS = open(SMARTS_path).readlines()[1:]
-#     SMARTS = [i.rstrip() for i in SMARTS]
-#
-#
-#     error_code, titles_file = file_separate.separate_ligands(args.input, "ligands")
-#     if error_code != 0:
-#         parser.print_help()
-#         exit(error_code)
-#
-#     files = os.listdir("./ligands")
-#
-#
-#     output = open(args.output, "w")
-#     output.write('entryimport "%s"\nentryimport "%s"\nshowpanel superimpose\n\n' %(args.crystal, args.input))
-#
-#     for i in range(len(titles_file)):
-#         output.write("entryincludeonly s_m_title *%s*\n" % '_'.join(titles_file[i].split('_')[:2]))
-#         output.write("entryinclude s_m_title %s\n" % '_'.join(titles_file[i].split('_')[:1]))
-#         output.write('propertysuperimposesetting  applytoentries=included\nsuperimpose  inplace=false\nsuperimposeset atom.ptype " CA "\nsuperimpose  inplace=true')
-#         output.write('uperimposesmarts "%s"\n\n' % SMARTS[i])
-#
-#     output.close()
+    input = ""
+    for i in os.listdir("./"):
+        if unzipped.rstrip("_pv.mae") and "out_complex":
+            input = i
+            break
+
+    if input:
+        error_code, titles_file = file_separate.separate_ligands(input, "ligands")
+        if error_code != 0:
+            parser.print_help()
+            exit(error_code)
+    else:
+        print("File not found - complex.")
+        exit()
+
+    files = os.listdir("./ligands")
+
+
+    output = open(args.output, "w")
+    output.write('entryimport "%s"\nentryimport "%s"\nshowpanel superimpose\n\n' %(args.crystal, input))
+
+    for i in range(len(titles_file)):
+        output.write("entryincludeonly s_m_title *%s*\n" % '_'.join(titles_file[i].split('_')[:2]))
+        output.write("entryinclude s_m_title %s\n" % '_'.join(titles_file[i].split('_')[:1]))
+        output.write('propertysuperimposesetting  applytoentries=included\nsuperimpose  inplace=false\nsuperimposeset atom.ptype " CA "\nsuperimpose  inplace=true')
+        output.write('uperimposesmarts "%s"\n\n' % SMARTS_save[i])
+
+    output.close()
