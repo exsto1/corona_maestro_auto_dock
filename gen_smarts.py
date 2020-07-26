@@ -95,7 +95,7 @@ if __name__ == '__main__':
 
     fileutils.force_remove(options.out_file)
 
-    outputFile = open(options.out_file, 'w')
+    outputFile = open(options.out_file, 'w+')
 
     for count, st in enumerate(structure.StructureReader(options.input_file)):
         this_smarts = gen_smarts(st)

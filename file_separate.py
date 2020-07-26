@@ -1,4 +1,4 @@
-def separate_ligands(file_path):
+def separate_ligands(file_path, folder):
     try:
         file = open(file_path).read()
     except TypeError:
@@ -17,11 +17,11 @@ def separate_ligands(file_path):
     titles_file = []
 
     for i in range(len(parts) - 1):
-        title0 = parts[i].split(" :::")[1].split('\n')[1].rstrip()
+        title0 = parts[i].split(" :::")[1].split('\n')[1].strip()
         title1 = title0.split(":")[-1]
         titles_file.append(title1)
 
-        out = open("ligands/%s.mae" % title1, 'w')
+        out = open("%s/%s.mae" % (folder, title1), 'w')
         out.write(intro)
         out.write(parts[i])
         out.write(" } \n} \n")
