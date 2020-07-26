@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
     for i in range(1, len(titles_SMARTS)):
         try:
-            os.system("python ./gen_smarts.py -i ./docking/%s.mae, -o ./DELETE" % (titles_SMARTS[i]))
+            os.system("sudo /opt/schrodingerfree/run gen_smarts.py ./docking/%s.mae ./DELETE" % (titles_SMARTS[i]))
             temp = open("./DELETE")
             temp1 = temp.read()
             SMARTS_save.append(temp1)
