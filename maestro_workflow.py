@@ -21,13 +21,22 @@ if __name__ == "__main__":
         parser.print_help()
         exit(error_code)
 
-    SMARTS_save = open("SMARTS.txt", "w")
+    SMARTS_save = []
 
     for i in range(1, len(titles_SMARTS)):
         try:
-            os.system("python ./gen_smarts.py -i ./docking/%s, -o %s" % (titles_SMARTS[i], "./SMARTS.txt"))
+            os.system("python ./gen_smarts.py -i ./docking/%s, -o ./DELETE" % (titles_SMARTS[i]))
+            temp = open("./DELETE")
+            temp1 = temp.read()
+            SMARTS_save.append(temp1)
+            temp.close()
         except ValueError:
             print("ERROR: %s" %titles_SMARTS[i])
+    os.remove("./DELETE")
+
+    print(len(SMARTS_save))
+    for i in SMARTS_save:
+        print(i)
 
 # ####
 #
