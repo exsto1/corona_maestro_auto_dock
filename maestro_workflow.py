@@ -43,7 +43,7 @@ if __name__ == "__main__":
 
     input = ""
     for i in os.listdir("./"):
-        if unzipped.rstrip("_pv.mae") in i and "out_complex" in i:
+        if unzipped.rstrip("_pv.mae") in i and "out_complex" in i and "maegz" not in i:
             input = i
             break
 
