@@ -1,24 +1,28 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import argparse
+import os
+
+from scripts.file_separate import separate_ligands
+from scripts.SMARTS_extract import unzip, SMARTS_extract
+
 
 if __name__ == "__main__":
-    import argparse
-    import os
-
-    from scripts.file_separate import separate_ligands
-    from scripts.SMARTS_extract import SMARTS_extract
-
     parser = argparse.ArgumentParser()
 
     parser.add_argument("-d", "--docking", help="Input file from docking. Unzipped. *_pv.maegz")
     parser.add_argument("-c", "--crystal", help="Input file with crystals.")
     parser.add_argument("-o", "--output", help="Output filename.", default="maestro_script.txt")
-    parser.add_argument("-r", "--remove", help="Clear created temp files and folders after finished run. Default: True", action="store_true")
+    parser.add_argument("-r", "--remove", help="Clear created temp files and folders after finished run. Default: True", action="store_false")
 
     args = parser.parse_args()
 
     def cleanup():
+        """
+        Cleans files and folders after finished run.
+        """
+
         paths = ["./ligands", "./docking", "./workspace"]  # Folders to clean.
         for path in paths:
             for file in os.listdir(path):
@@ -27,6 +31,10 @@ if __name__ == "__main__":
 
 
     def main():
+        """
+        Main function. Creates Maestro script.
+        """
+
         try:
             os.mkdir("./workspace")  # Folder for temporary files
         except FileExistsError:
@@ -34,33 +42,9 @@ if __name__ == "__main__":
             for i in os.listdir("./workspace"):
                 os.remove("./workspace/%s" % i)
 
-        base = os.path.basename(args.docking)
-        unzipped = "/".join(["workspace", os.path.splitext(base)[0]+".mae"])
+        unzipped = unzip(args.docking, "workspace")  # SMARTS_extract.py
 
-        os.system("sudo /opt/schrodingerfree/run structconvert.py -imae %s %s" % (args.docking, unzipped))  # Convert zipped file after docking to unzipped version.
-
-        # TODO FINISH IMPLEMENTING IN OTHER SCRIPT - SMARTS_extract.py
-        # # SMARTS
-        # error_code, titles_SMARTS = separate_ligands(unzipped, "docking")  # Separate entries
-        # if error_code != 0:
-        #     parser.print_help()
-        #     exit(error_code)
-        #
-        # # From each file extract SMARTS to temporary file and store value in a list
-        # SMARTS_save = []
-        #
-        # for i in range(1, len(titles_SMARTS)):
-        #     try:
-        #         os.system("sudo /opt/schrodingerfree/run gen_smarts.py ./docking/%s.mae ./workspace/DELETE" % titles_SMARTS[i])
-        #         temp = open("./workspace/DELETE")
-        #         temp1 = temp.read()
-        #         SMARTS_save.append(temp1)
-        #         temp.close()
-        #     except ValueError:
-        #         print("ERROR: %s" % titles_SMARTS[i])
-        # os.remove("./workspace/DELETE")
-
-        SMARTS = SMARTS_extract()
+        SMARTS = SMARTS_extract(unzipped, "docking", "workspace") # SMARTS_extract.py
 
         os.system("sudo /opt/schrodingerfree/run pv_convert.py -mode merge %s" % unzipped)
 
@@ -71,7 +55,7 @@ if __name__ == "__main__":
                 break
 
         if input_file:
-            error_code, titles_file = separate_ligands(input_file, "ligands")
+            error_code, titles_file = separate_ligands(input_file, "ligands")  # file_separate.py
             if error_code != 0:
                 parser.print_help()
                 exit(error_code)
@@ -90,7 +74,7 @@ if __name__ == "__main__":
 
         output.close()
 
-        if not args.remove:
+        if args.remove:
             cleanup()
 
     main()

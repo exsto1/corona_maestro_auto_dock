@@ -1,8 +1,26 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import os
+import argparse
+
 
 def separate_ligands(file_path, folder):
+    """
+    Separate .mae file into entries.
+
+    :param str file_path: .mae file to separate
+    :param str folder: workspace folder to save separated files
+
+    :var str intro: required intro part to write into each new .mae file
+    :var list parts: sections of the file
+
+    :return int error_code:
+        1: No input provided
+        2: File doesn't exist
+    :return list or None titles_file: returns files paths in the same order as in the input (file_path)
+    """
+
     try:
         file = open(file_path).read()
     except TypeError:
@@ -40,12 +58,9 @@ def separate_ligands(file_path, folder):
 
 
 if __name__ == "__main__":
-    import os
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-i", "--input", help="Input file with multiple ligands.")
-    parser.add_argument("-f", "--folder", help="Working folder inside current directory. Will be created if doesn't exist.")
+    parser = argparse.ArgumentParser(description="Separate .mae file into separate entries. Using id strings as unique filenames.")
+    parser.add_argument("-i", "--input", help="input file with multiple ligands")
+    parser.add_argument("-f", "--folder", help="working folder inside current directory. Will be created if doesn't exist")
     args = parser.parse_args()
 
     separate_ligands(args.input, args.folder)
