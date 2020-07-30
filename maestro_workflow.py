@@ -14,7 +14,7 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--docking", help="Input file from docking. Unzipped. *_pv.maegz")
     parser.add_argument("-c", "--crystal", help="Input file with crystals.")
     parser.add_argument("-o", "--output", help="Output filename.", default="maestro_script.txt")
-    parser.add_argument("-r", "--remove", help="Clear created temp files and folders after finished run. Default: True", action="store_false")
+    parser.add_argument("-r", "--remove", help="Clear created temp files and folders after finished run. Default: True", action="store_true")
 
     args = parser.parse_args()
 
@@ -83,3 +83,6 @@ if __name__ == "__main__":
 
 # TODO os.path.abspath dla normalizacji ścieżek?
 # TODO requirements.txt, README.md
+# TODO sudo
+# TODO wyeksportować plik pv_convert -> out.complex
+
