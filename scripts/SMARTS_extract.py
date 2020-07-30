@@ -44,7 +44,7 @@ def SMARTS_extract(unzipped, folder=".", temp_file_loc="."):
 
     for i in range(1, len(titles_SMARTS)):
         try:
-            os.system("sudo /opt/schrodingerfree/run gen_smarts.py %s/%s.mae %s/DELETE" % (folder, titles_SMARTS[i], temp_file_loc))
+            os.system("sudo /opt/schrodingerfree/run gen_smarts.py %s/%s.mae %s/DELETE > void" % (folder, titles_SMARTS[i], temp_file_loc))
             temp = open("%s/DELETE" % temp_file_loc)
             temp1 = temp.read()
             SMARTS_save.append(temp1)
