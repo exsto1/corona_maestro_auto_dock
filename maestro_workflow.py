@@ -27,7 +27,7 @@ if __name__ == "__main__":
         for path in paths:
             for file in os.listdir(path):
                 os.remove('/'.join([path, file]))
-            os.remove(path)
+            os.rmdir(path)
 
 
     def main():
@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
         unzipped = unzip(args.docking, "workspace")  # SMARTS_extract.py
 
-        SMARTS = SMARTS_extract(unzipped, "docking", "workspace") # SMARTS_extract.py
+        SMARTS = SMARTS_extract(unzipped, "docking", "workspace")  # SMARTS_extract.py
 
         os.system("sudo /opt/schrodingerfree/run pv_convert.py -mode merge %s" % unzipped)
 
@@ -54,6 +54,7 @@ if __name__ == "__main__":
                 input_file = i
                 break
 
+        titles_file = []
         if input_file:
             error_code, titles_file = separate_ligands(input_file, "ligands")  # file_separate.py
             if error_code != 0:
@@ -78,3 +79,7 @@ if __name__ == "__main__":
             cleanup()
 
     main()
+
+
+# TODO os.path.abspath dla normalizacji ścieżek?
+# TODO requirements.txt, README.md
