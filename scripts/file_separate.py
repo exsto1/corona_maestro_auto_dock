@@ -4,6 +4,8 @@
 import os
 import argparse
 
+from scripts.utils import create_folder
+
 
 def separate_ligands(file_path, folder):
     """
@@ -30,10 +32,7 @@ def separate_ligands(file_path, folder):
         print("No such file: %s" % file_path)
         return 2, None
 
-    try:
-        os.mkdir(folder)
-    except FileExistsError:
-        print("Directory %s already exists! Continuing..." % folder)
+    create_folder(folder)  # utils.py
 
     parts = file.split(' } \n} \n')  # Splits .mae file into separate sections
 

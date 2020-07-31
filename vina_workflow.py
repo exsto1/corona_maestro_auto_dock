@@ -10,8 +10,8 @@ Input:
 2) Łączymy wszystkie pliki .mae z ligandami do jednego wspólnego pliku .mae ---> $SCHRODINGER/utilities/structcat -imae lig1.mae -imae lig2.mae ..... -omae ligs.mae
 
 3) Mamy teraz 2 pliki .mae:
-	-bialko.mae
-        -ligs.mae
+    -bialko.mae
+    -ligs.mae
 
 4) generujemy SMARTS dla pliku z samymi ligandami: os.system("sudo /opt/schrodingerfree/run gen_smarts.py ./docking/%s.mae SMARTS.txt" % ligs.mae)
 
@@ -25,55 +25,78 @@ Input:
 import argparse
 import os
 
-parser = argparse.ArgumentParser(description='Process some integers.')
-parser.add_argument('-p', "--protein", help='an integer for the accumulator')
-parser.add_argument('-c', "--crystal", help='an integer for the accumulator')
-parser.add_argument('-l', "--ligand", help='an integer for the accumulator')
+from scripts.utils import maestro_writer, cleanup, create_folder
 
-args = parser.parse_args()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Process some integers.')
 
-# TODO Check if PATH exists
-# TODO Check folders and create
-ligand_files = os.listdir(args.ligand)
-for file in ligand_files:
-    base = os.path.basename(file)
-    nazwa = "workspace/ligand_mae/%s.mae" % os.path.splitext(base)[0]  # TODO - ścieżka osobno
-    os.system("sudo /opt/schrodingerfree/run structconvert.py -ipdb %s %s" % (file, nazwa))
-# TODO wyciągnąć nazwy z : jak w file_separate.py
-titles_file = []
+    parser.add_argument('-p', "--protein", help='input file with protein structure .pdb')
+    parser.add_argument('-c', "--crystal", help='input file with crystal')
+    parser.add_argument('-l', "--ligand", help='path to folder with ligands .pdb')
+    parser.add_argument('-o', "--output", help='output file name', default="vina_maestro_script.txt")
+    parser.add_argument("-r", "--remove", help="clear created temp files and folders after finished run; default: True", action="store_true")
 
-for i in os.listdir("workspace/ligand_mae/"):
-    temp = open("workspace/ligand_mae/%s" % i).read()
-    title0 = temp.split(" :::")[2].split('\n')[1].strip()  # Suitable descriptor for file name can be found here.
-    title1 = title0.split(":")[-1]
-    titles_file.append(title1)
+    args = parser.parse_args()
 
-os.system("SCHRODINGER/utilities/structcat %s -omae ./workspace/ligands/ligs.mae" % " ".join(os.listdir("./workspace/ligand_mae")))
+    def main():
+        """
+        Main function. Creates Maestro script.
+        """
 
-nazwa_bialko = "workspace/bialko.mae"  # TODO ścieżka
-os.system("sudo /opt/schrodingerfree/run structconvert.py -ipdb %s %s" % (args.protein, nazwa_bialko))
+        create_folder("./workspace", True)
+        create_folder("./workspace/ligand_mae", True)  # TODO sprawdzić, czy to zadziała, jeśli jest folder w środku, rozważyć alternatywne usuwanie folderu.
 
-
-os.system("sudo /opt/schrodingerfree/run gen_smarts.py ./docking/%s.mae SMARTS.txt" % "ligs.mae")  # TODO ścieżka
-SMARTS = open("SMARTS.txt").readlines()
-SMARTS = [i.rstrip() for i in SMARTS]
-
-os.system("SCHRODINGER/utilities/structcat -imae bialko.mae -imae ligs.mae -omae all_pv.mae")  # TODO ścieżki
-
-os.system("sudo /opt/schrodingerfree/run pv_convert.py -mode merge all_pv.mae")  # TODO ścieżki
-
-input_file = "all-out_complex.mae"  # TODO ścieżki
+        ligand_path = "./workspace/ligand_mae"
+        combined_ligand_filename = "./workspace/ligs.mae"
+        protein_filename = "./workspace/bialko.mae"
+        ligand_protein_filename = "./workspace/all.mae"
+        SMARTS_filename = "./workspace/SMARTS.txt"
+        input_filename = "./workspace/all-out_complex.mae"
 
 
+        ligand_files = []
+        try:
+            ligand_files = os.listdir(args.ligand)
+        except FileNotFoundError:
+            print("Folder not found %s" % args.ligand)
+            parser.print_help()
+            exit()
 
-output = open(args.output, "w")
-output.write('entryimport "%s"\nentryimport "%s"\nshowpanel superimpose\n\n' % (args.crystal, os.path.abspath('/'.join(["./workspace" + input_file]))))
+        for file in ligand_files:
+            base = os.path.basename(file)
+            nazwa = "%s/%s.mae" % (ligand_path, os.path.splitext(base)[0])
+            os.system("sudo /opt/schrodingerfree/run structconvert.py -ipdb %s %s" % (file, nazwa))
+        # TODO wyciągnąć nazwy z : jak w file_separate.py
+        titles_file = []
 
-for i in range(len(titles_file)):
-    output.write("entrywsincludeonly s_m_title *%s*\n" % '_'.join(titles_file[i].split('_')[:2]))
-    output.write("entrywsinclude s_m_title %s\n" % '_'.join(titles_file[i].split('_')[:1]))
-    output.write(
-        'propertysuperimposesetting  applytoentries=included\nsuperimpose  inplace=false\nsuperimposeset atom.ptype " CA "\nsuperimpose  inplace=true\n')
-    output.write('superimposesmarts "%s" \n\n' % SMARTS[i].rstrip())
+        for i in os.listdir(ligand_path):
+            temp = open("%s/%s" % (ligand_path, i)).read()
+            title0 = temp.split(" :::")[2].split('\n')[1].strip()  # Suitable descriptor for file name can be found here.
+            title1 = title0.split(":")[-1]
+            titles_file.append(title1)
 
-output.close()
+##### TODO #####
+        os.system("SCHRODINGER/utilities/structcat %s -omae ./workspace/ligand_mae/ligs.mae" % " ".join("/".join([" ./workspace/ligand_mae/", os.listdir("./workspace/ligand_mae")])))
+##### TODO #####
+
+        os.system("sudo /opt/schrodingerfree/run structconvert.py -ipdb %s %s" % (args.protein, protein_filename))
+
+        os.system("sudo /opt/schrodingerfree/run gen_smarts.py %s/%s %s" % (ligand_path, combined_ligand_filename, SMARTS_filename))
+
+        SMARTS = open(SMARTS_filename).readlines()
+        SMARTS = [i.rstrip() for i in SMARTS]
+
+        os.system("SCHRODINGER/utilities/structcat -imae %s -imae %s/%s -omae %s" % (protein_filename, ligand_path, combined_ligand_filename, ligand_protein_filename))
+
+        os.system("sudo /opt/schrodingerfree/run pv_convert.py -mode merge %s" % ligand_protein_filename)
+
+        maestro_writer(args.output, args.crystal, input_filename, titles_file, SMARTS)  # utils.py
+
+        if args.remove:  # TODO sprawdzić czy folder w środku nie spowoduje błędów.
+            paths = ["./workspace"]  # Folders to clean.
+            cleanup(paths)  # utils.py
+
+    main()
+
+    # TODO zmienić nazwy sekcji w połączonym pliku z ligandami .mae
+    # TODO imput_filename path check.
