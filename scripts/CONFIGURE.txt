@@ -1,0 +1,2 @@
+# PATH to schrodinger
+V /opt/schrodingerfree

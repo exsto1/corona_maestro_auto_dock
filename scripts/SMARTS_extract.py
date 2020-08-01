@@ -5,12 +5,14 @@ import os
 import argparse
 
 from scripts.file_separate import separate_ligands
+from scripts.utils import CONFIGURE
 
 
-def unzip(zipped_file, folder="."):
+def unzip(zipped_file, tool_path, folder="."):
     """
     Unzip file from docking
 
+    :param str tool_path: path to schroedinger
     :param str zipped_file: file from docking
     :param str folder: folder name to save unzipped version of the file
 
@@ -20,14 +22,16 @@ def unzip(zipped_file, folder="."):
     base = os.path.basename(zipped_file)
     unzipped = "/".join([folder, os.path.splitext(base)[0] + ".mae"])
 
-    os.system("sudo /opt/schrodingerfree/run structconvert.py -imae %s %s" % (zipped_file, unzipped))  # Convert zipped file after docking to unzipped version.
+    # os.system("sudo /opt/schrodingerfree/run structconvert.py -imae %s %s" % (zipped_file, unzipped))  # Convert zipped file after docking to unzipped version.
+    os.system("sudo %s/run structconvert.py -imae %s %s" % (tool_path, zipped_file, unzipped))  # Convert zipped file after docking to unzipped version.
     return unzipped
 
 
-def SMARTS_extract(unzipped, folder=".", temp_file_loc="."):
+def SMARTS_extract(unzipped, tool_path, folder=".", temp_file_loc="."):
     """
     From each file extract SMARTS to temporary file and store value in a list.
 
+    :param str tool_path: path to schroedinger
     :param str unzipped: unzipped file from docking
     :param str folder: workspace folder, where separated files are saved
     :param str temp_file_loc: temporary DELETE file location
@@ -44,7 +48,8 @@ def SMARTS_extract(unzipped, folder=".", temp_file_loc="."):
 
     for i in range(1, len(titles_SMARTS)):
         try:
-            os.system("sudo /opt/schrodingerfree/run gen_smarts.py %s/%s.mae %s/DELETE > void" % (folder, titles_SMARTS[i], temp_file_loc))
+            # os.system("sudo /opt/schrodingerfree/run gen_smarts.py %s/%s.mae %s/DELETE > void" % (folder, titles_SMARTS[i], temp_file_loc))
+            os.system("sudo %s/run gen_smarts.py %s/%s.mae %s/DELETE" % (tool_path, folder, titles_SMARTS[i], temp_file_loc))
             temp = open("%s/DELETE" % temp_file_loc)
             temp1 = temp.read()
             SMARTS_save.append(temp1)
@@ -63,17 +68,20 @@ if __name__ == "__main__":
     inp.add_argument("-u", "--unzipped", help="unzipped file from docking")
 
     parser.add_argument("-f", "--folder", help="workspace folder", default=".")
+    parser.add_argument("--update", help="update gloabal variables; default: False", action="store_true")
     args = parser.parse_args()
+
+    GLOBAL_VARIABLES = CONFIGURE(args.update)  # utils.py
 
     SMARTS = ""
     if args.zipped and args.unzipped:
         parser.print_help()
         exit()
     if args.zipped:
-        unzipped_file = unzip(args.zipped)
-        SMARTS = SMARTS_extract(unzipped_file)
+        unzipped_file = unzip(args.zipped, GLOBAL_VARIABLES[0])
+        SMARTS = SMARTS_extract(unzipped_file, GLOBAL_VARIABLES[0])
     if args.unzipped:
-        SMARTS = SMARTS_extract(args.unzipped)
+        SMARTS = SMARTS_extract(args.unzipped, GLOBAL_VARIABLES[0])
     else:
         parser.print_help()
         exit()

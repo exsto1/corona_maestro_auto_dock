@@ -1,2 +1,0 @@
-# PATH to schrodinger - specified by user manually or during first setup.
-SCHRODINGER_PATH=/opt/schrodingerfree
