@@ -62,4 +62,4 @@ if __name__ == "__main__":
     parser.add_argument("-f", "--folder", help="working folder inside current directory. Will be created if doesn't exist")
     args = parser.parse_args()
 
-    separate_ligands(args.input, args.folder)
+    separate_ligands(os.path.abspath(args.input), os.path.abspath(args.folder))

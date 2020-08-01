@@ -25,26 +25,30 @@ if __name__ == "__main__":
         Main function. Creates Maestro script.
         """
 
+        # Storing paths to files and normalizing them
         GLOBAL_VARIABLES = CONFIGURE(args.update)  # utils.py
+        workspace_folder = os.path.abspath("./workspace")
+        docking_folder = os.path.abspath("./docking")
+        docking_file = os.path.abspath(args.docking)
+        ligands_folder = os.path.abspath("./ligands")
 
-        create_folder("./workspace", True)  # utils.py
+        create_folder(workspace_folder, True)  # utils.py
 
-        unzipped = unzip(args.docking, "workspace")  # SMARTS_extract.py
+        unzipped = unzip(docking_file, workspace_folder)  # SMARTS_extract.py
 
-        SMARTS = SMARTS_extract(unzipped, "docking", "workspace")  # SMARTS_extract.py
+        SMARTS = SMARTS_extract(unzipped, docking_folder, workspace_folder)  # SMARTS_extract.py
 
-        # os.system("sudo /opt/schrodingerfree/run pv_convert.py -mode merge %s" % unzipped)
         os.system("sudo %s/run pv_convert.py -mode merge %s" % (GLOBAL_VARIABLES[0], unzipped))
 
         input_file = ""
-        for i in os.listdir("./workspace"):
+        for i in os.listdir(workspace_folder):
             if unzipped.rstrip("_pv.mae") in i and "out_complex" in i and "maegz" not in i:
-                input_file = "/".join(["./workspace", i])
+                input_file = "/".join([workspace_folder, i])
                 break
 
         titles_file = []
         if input_file:
-            error_code, titles_file = separate_ligands(input_file, "ligands")  # file_separate.py
+            error_code, titles_file = separate_ligands(input_file, ligands_folder)  # file_separate.py
             if error_code != 0:
                 parser.print_help()
                 exit(error_code)
@@ -55,13 +59,11 @@ if __name__ == "__main__":
         maestro_writer(args.output, args.crystal, input_file, titles_file, SMARTS)  # utils.py
 
         if args.remove:
-            paths = ["./ligands", "./docking", "./workspace"]  # Folders to clean.
+            paths = [ligands_folder, docking_folder, workspace_folder]  # Folders to clean.
             cleanup(paths)  # utils.py
 
     main()
 
-
-# TODO os.path.abspath dla normalizacji ścieżek?
-# TODO requirements.txt, README.md
+# TODO README.md
 # TODO sudo
 # TODO wyeksportować plik pv_convert -> out.complex

@@ -22,7 +22,6 @@ def unzip(zipped_file, tool_path, folder="."):
     base = os.path.basename(zipped_file)
     unzipped = "/".join([folder, os.path.splitext(base)[0] + ".mae"])
 
-    # os.system("sudo /opt/schrodingerfree/run structconvert.py -imae %s %s" % (zipped_file, unzipped))  # Convert zipped file after docking to unzipped version.
     os.system("sudo %s/run structconvert.py -imae %s %s" % (tool_path, zipped_file, unzipped))  # Convert zipped file after docking to unzipped version.
     return unzipped
 
@@ -78,10 +77,10 @@ if __name__ == "__main__":
         parser.print_help()
         exit()
     if args.zipped:
-        unzipped_file = unzip(args.zipped, GLOBAL_VARIABLES[0])
-        SMARTS = SMARTS_extract(unzipped_file, GLOBAL_VARIABLES[0])
+        unzipped_file = unzip(os.path.abspath(args.zipped), GLOBAL_VARIABLES[0])
+        SMARTS = SMARTS_extract(os.path.abspath(unzipped_file), GLOBAL_VARIABLES[0])
     if args.unzipped:
-        SMARTS = SMARTS_extract(args.unzipped, GLOBAL_VARIABLES[0])
+        SMARTS = SMARTS_extract(os.path.abspath(args.unzipped), GLOBAL_VARIABLES[0])
     else:
         parser.print_help()
         exit()

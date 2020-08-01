@@ -66,7 +66,8 @@ def CONFIGURE(update=False):
     :key 0: PATH to schrodinger
     """
 
-    CONF_path = "./scripts/CONFIGURE.txt"
+    CONF_path = os.path.abspath("./scripts/CONFIGURE.txt")
+
     settings_file = open(CONF_path)
     settings = settings_file.readlines()
     settings_file.close()
@@ -77,7 +78,7 @@ def CONFIGURE(update=False):
         overwrite = False
         for i in range(len(settings_variables)):
             if not settings_variables[i]:
-                settings_variables[i] = input(settings_description[i])
+                settings_variables[i] = os.path.abspath(input(settings_description[i]))
                 overwrite = True
     else:
         overwrite = True
@@ -85,12 +86,13 @@ def CONFIGURE(update=False):
         for i in range(len(settings_variables)):
             temp = input(settings_description[i])
             if temp:
-                settings_variables[i] = temp
+                settings_variables[i] = os.path.abspath(temp)
 
     if overwrite:
         settings_file = open(CONF_path, "w")
         for i in range(len(settings_variables)):
             settings_file.write("# %s \n" % settings_description[i])
             settings_file.write("V %s \n" % settings_variables[i])
+        settings_file.close()
 
     return settings_variables

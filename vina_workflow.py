@@ -46,16 +46,15 @@ if __name__ == "__main__":
 
         GLOBAL_VARIABLES = CONFIGURE(args.update)  # utils.py
 
-        create_folder("./workspace", True)
-        create_folder("./workspace/ligand_mae", True)
+        create_folder(os.path.abspath("./workspace"), True)
+        create_folder(os.path.abspath("./workspace/ligand_mae"), True)
 
-        ligand_path = "./workspace/ligand_mae"
-        combined_ligand_filename = "./workspace/ligs.mae"
-        protein_filename = "./workspace/bialko.mae"
-        ligand_protein_filename = "./workspace/all.mae"
-        SMARTS_filename = "./workspace/SMARTS.txt"
-        input_filename = "./workspace/all-out_complex.mae"
-
+        ligand_path = os.path.abspath("./workspace/ligand_mae")
+        combined_ligand_filename = os.path.abspath("./workspace/ligs.mae")
+        protein_filename = os.path.abspath("./workspace/bialko.mae")
+        ligand_protein_filename = os.path.abspath("./workspace/all.mae")
+        SMARTS_filename = os.path.abspath("./workspace/SMARTS.txt")
+        input_filename = os.path.abspath("./workspace/all-out_complex.mae")
 
         ligand_files = []
         try:
@@ -79,14 +78,12 @@ if __name__ == "__main__":
             title1 = title0.split(":")[-1]
             titles_file.append(title1)
 
-##### TODO #####
+# TODO #####
         os.system("SCHRODINGER/utilities/structcat %s -omae ./workspace/ligand_mae/ligs.mae" % " ".join("/".join([" ./workspace/ligand_mae/", os.listdir("./workspace/ligand_mae")])))
-##### TODO #####
+# TODO #####
 
-        # os.system("sudo /opt/schrodingerfree/run structconvert.py -ipdb %s %s" % (args.protein, protein_filename))
         os.system("sudo %s/run structconvert.py -ipdb %s %s" % (GLOBAL_VARIABLES[0], args.protein, protein_filename))
 
-        # os.system("sudo /opt/schrodingerfree/run gen_smarts.py %s/%s %s" % (ligand_path, combined_ligand_filename, SMARTS_filename))
         os.system("sudo %s/run gen_smarts.py %s/%s %s" % (GLOBAL_VARIABLES[0], ligand_path, combined_ligand_filename, SMARTS_filename))
 
         SMARTS = open(SMARTS_filename).readlines()
@@ -94,13 +91,12 @@ if __name__ == "__main__":
 
         os.system("SCHRODINGER/utilities/structcat -imae %s -imae %s/%s -omae %s" % (protein_filename, ligand_path, combined_ligand_filename, ligand_protein_filename))  # TODO CONFIGURE???
 
-        # os.system("sudo /opt/schrodingerfree/run pv_convert.py -mode merge %s" % ligand_protein_filename)
         os.system("sudo %s/run pv_convert.py -mode merge %s" % (GLOBAL_VARIABLES[0], ligand_protein_filename))
 
         maestro_writer(args.output, args.crystal, input_filename, titles_file, SMARTS)  # utils.py
 
         if args.remove:
-            paths = ["./workspace"]  # Folders to clean.
+            paths = [os.path.abspath("./workspace")]  # Folders to clean.
             cleanup(paths)  # utils.py
 
     main()
