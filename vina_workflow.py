@@ -24,37 +24,116 @@ Input:
 
 import argparse
 import os
+import shutil
 
-from scripts.utils import maestro_writer, cleanup, create_folder, CONFIGURE
+from scripts.utils import maestro_writer, cleanup, create_folder
+from scripts.configuration_scripts import CONFIGURE
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser = argparse.ArgumentParser(description='Automatic RMSD counting for Autodock Vina.')
 
     parser.add_argument('-p', "--protein", help='input file with protein structure .pdb')
     parser.add_argument('-c', "--crystal", help='input file with crystal')
     parser.add_argument('-l', "--ligand", help='path to folder with ligands .pdb')
     parser.add_argument('-o', "--output", help='output file name', default="vina_maestro_script.txt")
-    parser.add_argument("-r", "--remove", help="clear created temp files and folders after finished run; default: True", action="store_true")
+    parser.add_argument("-r", "--remove", help="clear created temp files and folders after finished run; default: True", action="store_true") # TODO
     parser.add_argument("-u", "--update", help="update gloabal variables; default: False", action="store_true")
+    parser.add_argument("-s", "--save", help="save workspace folder", default="")  # TODO
+    ###
+    parser.add_argument("-fr", "--fromaa", help="Number of aa to be removed", default=-1)
+    parser.add_argument("-to", "--toaa", help="Number of aa to be removed", default=0)
+    ###
 
     args = parser.parse_args()
+
+###
+    def pdb_to_mae(input_file, output_path, schrodinger_path, sudo_perm, output_filename=None):  # konwersja pliku z białkiem z .pdb do .mae. zmiana pliku .mae tak aby nazwa pojawiała się w panelu maestro
+        if not output_filename:
+            base_prot = os.path.basename(input_file)
+            base_name = os.path.splitext(base_prot)[0]
+            path_name = os.path.abspath("%s/" % output_path + base_name + ".mae")
+        print(path_name)
+        os.system("%s %s/run structconvert.py -ipdb %s %s" % (sudo_perm, schrodinger_path, input_file, path_name))  # change to .mae
+
+        with open(path_name, "rt") as file:
+            lines = file.readlines()
+            ind_dots = []
+            for i in range(len(lines)):
+                if lines[i] == ' :::\n':
+                    ind_dots.append(i)
+            ddd = ind_dots[1] + 1
+            lines[ddd] = " "+base_name+"\n"
+
+        os.system("sudo chmod 777 " + path_name)  # TODO
+
+        with open(path_name, "w") as file:
+            for line in lines:
+                file.write(line)
+
+        return path_name, base_name
+
+
+    def sorted_ls(path):
+        ctime = lambda f: os.stat(os.path.join(path, f)).st_ctime
+        return sorted(os.listdir(path), key=ctime)
+###
 
     def main():
         """
         Main function. Creates Maestro script.
         """
 
-        GLOBAL_VARIABLES = CONFIGURE(args.update)  # utils.py
+        GLOBAL_VARIABLES = CONFIGURE(args.update)  # configuration_scripts.py
+        GLOBAL_VARIABLES[0]=GLOBAL_VARIABLES[0].strip()
+        GLOBAL_VARIABLES[1]=GLOBAL_VARIABLES[1].strip()
+
+
+        ligand_main_directory = os.path.abspath("./workspace/ligands")
+        ligand_mae_path = os.path.abspath("./workspace/ligand_mae")
+        combined_ligand_filename = os.path.abspath("./workspace/ligands/ligs.mae")
+        preprocessed_ligand_path = os.path.abspath("./workspace/ligands/preprocessed_ligands")
+        # ligand_protein_filename = os.path.abspath("./workspace/all.mae")
+
+        protein_original_path = os.path.abspath("./workspace/proteins")
+        # protein_filename = os.path.abspath("bialko.mae")
+
+        # complex_input_filename = os.path.abspath("./workspace/complex/all-out_complex.mae")
+        complex_path = os.path.abspath("./workspace/complex")
+        complex_original_path = os.path.abspath("./workspace/complex/original")
+        complex_deleted_path = os.path.abspath("./workspace/complex/deleted")
+
+        SMARTS_filename = os.path.abspath("./workspace/SMARTS.txt")
 
         create_folder(os.path.abspath("./workspace"), True)
-        create_folder(os.path.abspath("./workspace/ligand_mae"), True)
+        create_folder(os.path.abspath(ligand_main_directory), False)
+        create_folder(os.path.abspath(ligand_mae_path), False)
+        create_folder(os.path.abspath(preprocessed_ligand_path), False)
+        create_folder(os.path.abspath(protein_original_path), False)
+        create_folder(os.path.abspath(complex_path), False)
+        create_folder(os.path.abspath(complex_deleted_path), False)
+        create_folder(os.path.abspath(complex_original_path), False)
 
-        ligand_path = os.path.abspath("./workspace/ligand_mae")
-        combined_ligand_filename = os.path.abspath("./workspace/ligs.mae")
-        protein_filename = os.path.abspath("./workspace/bialko.mae")
-        ligand_protein_filename = os.path.abspath("./workspace/all.mae")
-        SMARTS_filename = os.path.abspath("./workspace/SMARTS.txt")
-        input_filename = os.path.abspath("./workspace/all-out_complex.mae")
+        """
+        workspace
+            | SMARTS.txt
+            ligands
+                | ligs.mae
+                ligand_mae
+                    | *.mae (from pdb)
+                preprocessed_lignads
+                    | preprocessed_ligands.pdb
+            proteins
+                | protein_input.mae
+                | protein_deleted.mae
+            complex
+                original  # not-modified
+                    | *.pv (maestro)
+                    | *.out_complex
+                deleted
+                    | *.pv (maestro)
+                    | *.out_complex
+        """
+
 
         ligand_files = []
         try:
@@ -64,36 +143,90 @@ if __name__ == "__main__":
             parser.print_help()
             exit()
 
+        # for file in ligand_files:
+        #     base = os.path.basename(file)
+        #     nazwa = "%s/%s.mae" % (ligand_path, os.path.splitext(base)[0])
+        #     os.system("%s %s/run structconvert.py -ipdb %s %s" % (GLOBAL_VARIABLES[1], GLOBAL_VARIABLES[0], file, nazwa))
+        # # TODO wyciągnąć nazwy z : jak w file_separate.py
+        # titles_file = []
+
+        # for i in os.listdir(ligand_path):
+        #     temp = open("%s/%s" % (ligand_path, i)).read()
+        #     title0 = temp.split(" :::")[2].split('\n')[1].strip()  # Suitable descriptor for file name can be found here.
+        #     title1 = title0.split(":")[-1]
+        #     titles_file.append(title1)
+
+        #titles_file = []
         for file in ligand_files:
-            base = os.path.basename(file)
-            nazwa = "%s/%s.mae" % (ligand_path, os.path.splitext(base)[0])
-            # os.system("sudo /opt/schrodingerfree/run structconvert.py -ipdb %s %s" % (file, nazwa))
-            os.system("sudo %s/run structconvert.py -ipdb %s %s" % (GLOBAL_VARIABLES[0], file, nazwa))
-        # TODO wyciągnąć nazwy z : jak w file_separate.py
-        titles_file = []
+            temp, base_lig = pdb_to_mae(os.path.abspath(args.ligand+"/"+file), ligand_mae_path, GLOBAL_VARIABLES[0], GLOBAL_VARIABLES[1])
+            #titles_file.append(base_lig)
+        
+        
+        #prepwizard
+        for file in os.listdir(ligand_mae_path):
+            file_name = os.path.basename(file)
+            base_file_name = os.path.splitext(file_name)[0]
+            os.system("%s %s/utilities/prepwizard -noepik -noprotassign -noimpref -WAIT %s %s" % (GLOBAL_VARIABLES[1], GLOBAL_VARIABLES[0], ligand_mae_path+"/"+file, base_file_name+".mae"))
+        
+        #move preprocessed ligand to preprocessed_ligs dir
+        cwd=os.getcwd()
+        sorted_cwd=sorted_ls(os.getcwd())
+        num_ligs=len(os.listdir(ligand_mae_path))
+        for i in sorted_cwd[-2*num_ligs:]:
+        	if i.endswith(".mae"):
+        	    shutil.move(os.getcwd()+"/"+i,preprocessed_ligand_path)
+        	if i.endswith(".log"):
+        		os.remove(os.getcwd()+"/"+i)
 
-        for i in os.listdir(ligand_path):
-            temp = open("%s/%s" % (ligand_path, i)).read()
-            title0 = temp.split(" :::")[2].split('\n')[1].strip()  # Suitable descriptor for file name can be found here.
-            title1 = title0.split(":")[-1]
-            titles_file.append(title1)
+
+
 
 # TODO #####
-        os.system("SCHRODINGER/utilities/structcat %s -omae ./workspace/ligand_mae/ligs.mae" % " ".join("/".join([" ./workspace/ligand_mae/", os.listdir("./workspace/ligand_mae")])))
+        """
+        list_ligand_mae_path=os.listdir(ligand_mae_path)
+        for i in range(len(list_ligand_mae_path)):
+        	list_ligand_mae_path[i]+=" "
+       
+        os.system("%s %s/utilities/structcat %s/%s -omae %s" % (GLOBAL_VARIABLES[1], GLOBAL_VARIABLES[0], ligand_mae_path, (ligand_mae_path+"/").join(list_ligand_mae_path), combined_ligand_filename))       
+        #os.system("SCHRODINGER/utilities/structcat %s -omae ./workspace/ligand_mae/ligs.mae" % " ".join("/".join([" ./workspace/ligand_mae/", os.listdir("./workspace/ligand_mae")])))
+        """
+        titles_file=[]
+        list_prep_ligand_path=os.listdir(preprocessed_ligand_path)
+        for i in range(len(list_prep_ligand_path)):
+        	titles_file.append(list_prep_ligand_path[i])
+        	list_prep_ligand_path[i]+=" "
+        print(titles_file)
+        os.system("%s %s/utilities/structcat %s/%s -omae %s" % (GLOBAL_VARIABLES[1], GLOBAL_VARIABLES[0], preprocessed_ligand_path, (preprocessed_ligand_path+"/").join(list_prep_ligand_path), combined_ligand_filename)) 
 # TODO #####
 
-        os.system("sudo %s/run structconvert.py -ipdb %s %s" % (GLOBAL_VARIABLES[0], args.protein, protein_filename))
-
-        os.system("sudo %s/run gen_smarts.py %s/%s %s" % (GLOBAL_VARIABLES[0], ligand_path, combined_ligand_filename, SMARTS_filename))
+        os.system("%s %s/run gen_smarts.py %s %s" % (GLOBAL_VARIABLES[1], GLOBAL_VARIABLES[0], combined_ligand_filename, SMARTS_filename))
 
         SMARTS = open(SMARTS_filename).readlines()
         SMARTS = [i.rstrip() for i in SMARTS]
 
-        os.system("SCHRODINGER/utilities/structcat -imae %s -imae %s/%s -omae %s" % (protein_filename, ligand_path, combined_ligand_filename, ligand_protein_filename))  # TODO CONFIGURE???
+        # os.system("%s %s/run structconvert.py -ipdb %s %s" % (GLOBAL_VARIABLES[1], GLOBAL_VARIABLES[0], args.protein, protein_filename))
+        ###
+        protein_path, protein_base = pdb_to_mae(args.protein, protein_original_path, GLOBAL_VARIABLES[0], GLOBAL_VARIABLES[1])
+        ###
 
-        os.system("sudo %s/run pv_convert.py -mode merge %s" % (GLOBAL_VARIABLES[0], ligand_protein_filename))
+        ### łączenie białka z ligandami i usuwanie albo i nie
 
-        maestro_writer(args.output, args.crystal, input_filename, titles_file, SMARTS)  # utils.py
+        # pose_viewer file and complex file for name_prot
+        os.system("%s %s/utilities/structcat -imae %s -imae %s -omae %s_pv.mae" % (GLOBAL_VARIABLES[1], GLOBAL_VARIABLES[0], protein_path, combined_ligand_filename, os.path.abspath(complex_original_path + "/" + protein_base)))
+        os.system("%s %s/run pv_convert.py -mode merge %s_pv.mae" % (GLOBAL_VARIABLES[1], GLOBAL_VARIABLES[0], os.path.abspath(complex_original_path + "/" + protein_base)))  # TODO ścieżki
+        input_file = os.path.abspath(complex_original_path + "/" + protein_base) + "-out_complex.mae"
+
+        # pose_viewer file and complex file for name_prot2
+        if args.toaa != 0:
+            protein_base_deleted = protein_base + "_deleted"
+            protein_path_deleted = os.path.abspath("workspace/" + protein_base_deleted + ".mae")
+
+            os.system("%s %s/run delete_atoms.py -asl \"res.num %s-%s\" %s %s" % (GLOBAL_VARIABLES[1], GLOBAL_VARIABLES[0], args.fromaa, args.toaa, protein_path, protein_path_deleted))
+            os.system("%s %s/utilities/structcat -imae %s -imae %s -omae %s_pv.mae" % (GLOBAL_VARIABLES[1], GLOBAL_VARIABLES[0], protein_path_deleted, combined_ligand_filename, os.path.abspath(complex_deleted_path + "/" + protein_base_deleted)))
+            os.system("%s %s/run pv_convert.py -mode merge %s_pv.mae" % (GLOBAL_VARIABLES[1], GLOBAL_VARIABLES[0], os.path.abspath(complex_deleted_path + "/" + protein_base_deleted)))
+            input_file = os.path.abspath(complex_deleted_path + "/" + protein_base_deleted + "-out_complex.mae")
+
+        maestro_writer(args.output, args.crystal, input_file, titles_file, SMARTS)  # utils.py
 
         if args.remove:
             paths = [os.path.abspath("./workspace")]  # Folders to clean.
