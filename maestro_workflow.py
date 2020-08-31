@@ -6,8 +6,8 @@ import os
 
 from scripts.file_separate import separate_ligands
 from scripts.SMARTS_extract import unzip, SMARTS_extract
-from scripts.utils import create_folder, maestro_writer, cleanup, CONFIGURE
-
+from scripts.utils import create_folder, maestro_writer, cleanup
+from scripts.configuration_scripts import CONFIGURE
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -36,9 +36,9 @@ if __name__ == "__main__":
 
         unzipped = unzip(docking_file, workspace_folder)  # SMARTS_extract.py
 
-        SMARTS = SMARTS_extract(unzipped, docking_folder, workspace_folder)  # SMARTS_extract.py
+        SMARTS = SMARTS_extract(required, unzipped, docking_folder, workspace_folder)  # SMARTS_extract.py
 
-        os.system("sudo %s/run pv_convert.py -mode merge %s" % (GLOBAL_VARIABLES[0], unzipped))
+        os.system("%s %s/run pv_convert.py -mode merge %s" % (GLOBAL_VARIABLES[1], GLOBAL_VARIABLES[0], unzipped))
 
         input_file = ""
         for i in os.listdir(workspace_folder):

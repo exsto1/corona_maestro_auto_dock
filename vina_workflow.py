@@ -25,10 +25,11 @@ Input:
 import argparse
 import os
 
-from scripts.utils import maestro_writer, cleanup, create_folder, CONFIGURE
+from scripts.utils import maestro_writer, cleanup, create_folder
+from scripts.configuration_scripts import CONFIGURE
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser = argparse.ArgumentParser(description='Automatic RMSD counting for Autodock Vina.')
 
     parser.add_argument('-p', "--protein", help='input file with protein structure .pdb')
     parser.add_argument('-c', "--crystal", help='input file with crystal')
@@ -67,8 +68,7 @@ if __name__ == "__main__":
         for file in ligand_files:
             base = os.path.basename(file)
             nazwa = "%s/%s.mae" % (ligand_path, os.path.splitext(base)[0])
-            # os.system("sudo /opt/schrodingerfree/run structconvert.py -ipdb %s %s" % (file, nazwa))
-            os.system("sudo %s/run structconvert.py -ipdb %s %s" % (GLOBAL_VARIABLES[0], file, nazwa))
+            os.system("%s %s/run structconvert.py -ipdb %s %s" % (GLOBAL_VARIABLES[1], GLOBAL_VARIABLES[0], file, nazwa))
         # TODO wyciągnąć nazwy z : jak w file_separate.py
         titles_file = []
 
@@ -82,16 +82,16 @@ if __name__ == "__main__":
         os.system("SCHRODINGER/utilities/structcat %s -omae ./workspace/ligand_mae/ligs.mae" % " ".join("/".join([" ./workspace/ligand_mae/", os.listdir("./workspace/ligand_mae")])))
 # TODO #####
 
-        os.system("sudo %s/run structconvert.py -ipdb %s %s" % (GLOBAL_VARIABLES[0], args.protein, protein_filename))
+        os.system("%s %s/run structconvert.py -ipdb %s %s" % (GLOBAL_VARIABLES[1], GLOBAL_VARIABLES[0], args.protein, protein_filename))
 
-        os.system("sudo %s/run gen_smarts.py %s/%s %s" % (GLOBAL_VARIABLES[0], ligand_path, combined_ligand_filename, SMARTS_filename))
+        os.system("%s %s/run gen_smarts.py %s/%s %s" % (GLOBAL_VARIABLES[1], GLOBAL_VARIABLES[0], ligand_path, combined_ligand_filename, SMARTS_filename))
 
         SMARTS = open(SMARTS_filename).readlines()
         SMARTS = [i.rstrip() for i in SMARTS]
 
-        os.system("SCHRODINGER/utilities/structcat -imae %s -imae %s/%s -omae %s" % (protein_filename, ligand_path, combined_ligand_filename, ligand_protein_filename))  # TODO CONFIGURE???
+        os.system("%s SCHRODINGER/utilities/structcat -imae %s -imae %s/%s -omae %s" % (GLOBAL_VARIABLES[1], protein_filename, ligand_path, combined_ligand_filename, ligand_protein_filename))  # TODO CONFIGURE???
 
-        os.system("sudo %s/run pv_convert.py -mode merge %s" % (GLOBAL_VARIABLES[0], ligand_protein_filename))
+        os.system("%s %s/run pv_convert.py -mode merge %s" % (GLOBAL_VARIABLES[1], GLOBAL_VARIABLES[0], ligand_protein_filename))
 
         maestro_writer(args.output, args.crystal, input_filename, titles_file, SMARTS)  # utils.py
 

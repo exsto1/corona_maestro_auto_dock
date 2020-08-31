@@ -1,2 +1,4 @@
-# PATH to schrodinger
+# PATH to schrodinger (string)
 V /opt/schrodingerfree
+# Sudo permission (boolean: T/F)
+V True

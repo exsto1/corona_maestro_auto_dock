@@ -5,7 +5,7 @@ import os
 import argparse
 
 from scripts.file_separate import separate_ligands
-from scripts.utils import CONFIGURE
+from scripts.configuration_scripts import CONFIGURE
 
 
 def unzip(zipped_file, tool_path, folder="."):
@@ -26,10 +26,11 @@ def unzip(zipped_file, tool_path, folder="."):
     return unzipped
 
 
-def SMARTS_extract(unzipped, tool_path, folder=".", temp_file_loc="."):
+def SMARTS_extract(sudo_var, unzipped, tool_path, folder=".", temp_file_loc="."):
     """
     From each file extract SMARTS to temporary file and store value in a list.
 
+    :param str sudo_var: required sudo perm?
     :param str tool_path: path to schroedinger
     :param str unzipped: unzipped file from docking
     :param str folder: workspace folder, where separated files are saved
@@ -48,7 +49,7 @@ def SMARTS_extract(unzipped, tool_path, folder=".", temp_file_loc="."):
     for i in range(1, len(titles_SMARTS)):
         try:
             # os.system("sudo /opt/schrodingerfree/run gen_smarts.py %s/%s.mae %s/DELETE > void" % (folder, titles_SMARTS[i], temp_file_loc))
-            os.system("sudo %s/run gen_smarts.py %s/%s.mae %s/DELETE" % (tool_path, folder, titles_SMARTS[i], temp_file_loc))
+            os.system("%s %s/run gen_smarts.py %s/%s.mae %s/DELETE" % (sudo_var, tool_path, folder, titles_SMARTS[i], temp_file_loc))
             temp = open("%s/DELETE" % temp_file_loc)
             temp1 = temp.read()
             SMARTS_save.append(temp1)
@@ -78,9 +79,9 @@ if __name__ == "__main__":
         exit()
     if args.zipped:
         unzipped_file = unzip(os.path.abspath(args.zipped), GLOBAL_VARIABLES[0])
-        SMARTS = SMARTS_extract(os.path.abspath(unzipped_file), GLOBAL_VARIABLES[0])
+        SMARTS = SMARTS_extract(required, os.path.abspath(unzipped_file), GLOBAL_VARIABLES[0])
     if args.unzipped:
-        SMARTS = SMARTS_extract(os.path.abspath(args.unzipped), GLOBAL_VARIABLES[0])
+        SMARTS = SMARTS_extract(required, os.path.abspath(args.unzipped), GLOBAL_VARIABLES[0])
     else:
         parser.print_help()
         exit()
