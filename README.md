@@ -2,7 +2,7 @@
 
 ### README WIP
 
-Workflow to automate calculating RMSD values between protein and ligands in Maestro and Vina.
+Workflow to automate calculating RMSD values between ligands from crystals and Docked protein-ligand complexes in Maestro and Vina.
 
 
 
