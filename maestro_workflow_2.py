@@ -14,7 +14,7 @@ if __name__ == "__main__":
 
     parser.add_argument("-d", "--docking", help="input file from docking, zipped *_pv.maegz")
     parser.add_argument("-c", "--crystal", help="input file with crystals")
-    parser.add_argument("-o", "--output", help="output filename", default="maestro_script.txt")
+    parser.add_argument("-o", "--output", help="output filename", default="maestro_script.cmd")
     parser.add_argument("-r", "--remove", help="clear created temp files and folders after finished run; default: False", action="store_true")
     parser.add_argument("-u", "--update", help="update gloabal variables; default: False", action="store_true")
 
