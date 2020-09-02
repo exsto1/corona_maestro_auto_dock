@@ -35,13 +35,13 @@ if __name__ == "__main__":
     parser.add_argument('-p', "--protein", help='input file with protein structure .pdb')
     parser.add_argument('-c', "--crystal", help='input file with crystal')
     parser.add_argument('-l', "--ligand", help='path to folder with ligands .pdb')
-    parser.add_argument('-o', "--output", help='output file name', default="vina_maestro_script.txt")
+    parser.add_argument('-o', "--output", help='output file name', default="vina_maestro_script.cmd")
     parser.add_argument("-r", "--remove", help="clear created temp files and folders after finished run; default: True", action="store_true") # TODO
     parser.add_argument("-u", "--update", help="update gloabal variables; default: False", action="store_true")
     parser.add_argument("-s", "--save", help="save workspace folder", default="")  # TODO
     ###
-    parser.add_argument("-fr", "--fromaa", help="Number of aa to be removed", default=-1)
-    parser.add_argument("-to", "--toaa", help="Number of aa to be removed", default=0)
+    parser.add_argument("-fr", "--fromaa", help="Position from which aa will be removed", default=-1)
+    parser.add_argument("-to", "--toaa", help="Position to which aa will be removed", default=-1)
     ###
 
     args = parser.parse_args()
@@ -217,7 +217,7 @@ if __name__ == "__main__":
         input_file = os.path.abspath(complex_original_path + "/" + protein_base) + "-out_complex.mae"
 
         # pose_viewer file and complex file for name_prot2
-        if args.toaa != 0:
+        if args.toaa != -1:
             protein_base_deleted = protein_base + "_deleted"
             protein_path_deleted = os.path.abspath("workspace/" + protein_base_deleted + ".mae")
 
@@ -226,7 +226,7 @@ if __name__ == "__main__":
             os.system("%s %s/run pv_convert.py -mode merge %s_pv.mae" % (GLOBAL_VARIABLES[1], GLOBAL_VARIABLES[0], os.path.abspath(complex_deleted_path + "/" + protein_base_deleted)))
             input_file = os.path.abspath(complex_deleted_path + "/" + protein_base_deleted + "-out_complex.mae")
 
-        maestro_writer(args.output, args.crystal, input_file, titles_file, SMARTS)  # utils.py
+        maestro_writer(args.output, args.crystal, input_file, titles_file, SMARTS, 1)  # utils.py
 
         if args.remove:
             paths = [os.path.abspath("./workspace")]  # Folders to clean.
